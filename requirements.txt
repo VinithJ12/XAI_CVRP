@@ -1,0 +1,11 @@
+# ── Python packages required for this project ──────────────────────────────
+# Install all at once with:  pip install -r requirements.txt
+
+numpy>=1.24          # Array math (distances, coordinates, etc.)
+torch>=2.0           # PyTorch — the RL model is built with this
+matplotlib>=3.7      # Plotting routes and SHAP charts
+shap>=0.44           # The core XAI library we use for explanations
+scikit-learn>=1.3    # Used for a simple surrogate model inside SHAP
+pandas>=2.0          # Data wrangling for the decision log
+seaborn>=0.12        # Nicer-looking plots
+tqdm>=4.65           # Progress bars when running many instances
