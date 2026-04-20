@@ -1,6 +1,6 @@
 """
 4_evaluate.py
-─────────────────────────────────────────────────────────────────────────────
+
 STEP 4: Evaluate the SHAP explanations and generate the final report.
 
 THIS IS THE MOST IMPORTANT STEP FOR YOUR PAPER.
@@ -20,7 +20,8 @@ WHAT THIS SCRIPT PRODUCES:
   results/evaluation_report.txt   ← human-readable findings
   plots/sensitivity_test.png      ← before/after feature change
   plots/degradation_by_size.png   ← quality vs problem size
-─────────────────────────────────────────────────────────────────────────────
+  plots/shap_scatter_distance_n*.png  ← SHAP value vs distance for each size
+
 """
 
 import os
@@ -50,9 +51,7 @@ def log(msg=""):
     report_lines.append(msg)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Q1: CONSISTENCY — Does distance dominate?
-# ═══════════════════════════════════════════════════════════════════════════
 log("=" * 65)
 log("Q1. CONSISTENCY: Does distance consistently rank as #1 feature?")
 log("=" * 65)
@@ -91,9 +90,7 @@ for n, res in consistency_results.items():
         f"{'✓ Hypothesis CONFIRMED' if hypothesis_confirmed else '✗ Hypothesis NOT confirmed'}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Q2: SENSITIVITY — Does changing an important feature change the decision?
-# ═══════════════════════════════════════════════════════════════════════════
 log("\n")
 log("=" * 65)
 log("Q2. SENSITIVITY: Does the model change decision when features change?")
@@ -121,8 +118,7 @@ def sensitivity_test(n: int, n_trials: int = 100) -> float:
         sensitivity_rate: fraction of trials where decision changed (0-1)
     """
     from utils.rl_model import KoolSurrogate
-    model = KoolSurrogate(noise_scale=0.0)  # deterministic for this test
-
+    model = KoolSurrogate(noise_scale=0.0, temperature=0.01, seed=42)
     changed = 0
 
     with open(f"data/instances_n{n}.pkl", "rb") as f:
@@ -146,7 +142,7 @@ def sensitivity_test(n: int, n_trials: int = 100) -> float:
         # Original decision
         original_choice = model.choose_next(state)
 
-        # ── Perturbation: move original_choice far away ───────────────────
+        # Perturbation: move original_choice far away
         # We temporarily shift its coordinates to the far corner of the map
         original_coords = inst.coords[original_choice].copy()
         inst.coords[original_choice] = np.array([1.5, 1.5])  # outside map
@@ -182,9 +178,7 @@ log("""
 """)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # Q3: DEGRADATION — Does explanation quality drop with problem size?
-# ═══════════════════════════════════════════════════════════════════════════
 log("=" * 65)
 log("Q3. DEGRADATION: Does SHAP reliability decrease for larger problems?")
 log("=" * 65)
@@ -208,7 +202,7 @@ for n in PROBLEM_SIZES:
 
     # Coefficient of Variation (std/mean) = relative variability
     # Normalized so we can compare across sizes
-    cv = std_val / (abs(mean_val) + 1e-8)
+    cv = std_val
 
     consistency_scores[n] = {"std": std_val, "mean": mean_val, "cv": cv}
     log(f"  n={n}: mean SHAP(distance)={mean_val:.4f}, "
@@ -218,7 +212,7 @@ log("""
   (Higher CV = more variable = less reliable explanation)
 """)
 
-# ── Plot: consistency vs problem size ─────────────────────────────────────
+# Plot: consistency vs problem size 
 sizes = list(consistency_scores.keys())
 cvs   = [consistency_scores[n]["cv"] for n in sizes]
 
@@ -237,7 +231,7 @@ plt.close()
 log("  Saved degradation plot → plots/degradation_by_size.png")
 
 
-# ── Scatter plots: feature value vs SHAP value for each size ─────────────
+# Scatter plots: feature value vs SHAP value for each size 
 log("\n  Generating feature scatter plots...")
 for n in PROBLEM_SIZES:
     shap_df = pd.read_csv(f"data/shap_values_n{n}.csv")
@@ -247,10 +241,7 @@ for n in PROBLEM_SIZES:
         save_path=f"plots/shap_scatter_distance_n{n}.png"
     )
 
-
-# ═══════════════════════════════════════════════════════════════════════════
 # FINAL REPORT
-# ═══════════════════════════════════════════════════════════════════════════
 log("\n")
 log("=" * 65)
 log("FINAL REPORT SUMMARY")
@@ -291,7 +282,7 @@ log("""
   are available, especially for smaller fleets / shorter routes.
 """)
 
-# ── Write report to file ───────────────────────────────────────────────────
+# Write report to file
 report_path = "results/evaluation_report.txt"
 with open(report_path, "w") as f:
     f.write("\n".join(report_lines))
