@@ -1,29 +1,28 @@
-=================================================================
 Q1. CONSISTENCY: Does distance consistently rank as #1 feature?
-=================================================================
+
 
   n=10 customers — feature ranking:
-    1. distance_to_candidate               0.10120 ← TOP
-    2. dist_candidate_to_depot             0.01569
-    3. candidate_demand_ratio              0.01500
-    4. urgency_score                       0.01204
-    5. remaining_capacity_ratio            0.00881
+    1. distance_to_candidate               0.02408 ← TOP
+    2. candidate_demand_ratio              0.01511
+    3. urgency_score                       0.01081
+    4. dist_candidate_to_depot             0.00852
+    5. remaining_capacity_ratio            0.00645
   → Distance ranks #1
 
   n=20 customers — feature ranking:
-    1. distance_to_candidate               0.07167 ← TOP
-    2. urgency_score                       0.01486
-    3. remaining_capacity_ratio            0.00625
-    4. candidate_demand_ratio              0.00570
-    5. dist_candidate_to_depot             0.00531
+    1. distance_to_candidate               0.01574 ← TOP
+    2. candidate_demand_ratio              0.00794
+    3. urgency_score                       0.00548
+    4. remaining_capacity_ratio            0.00535
+    5. dist_candidate_to_depot             0.00343
   → Distance ranks #1
 
   n=50 customers — feature ranking:
-    1. distance_to_candidate               0.04901 ← TOP
-    2. remaining_capacity_ratio            0.00839
-    3. urgency_score                       0.00454
-    4. candidate_demand_ratio              0.00368
-    5. dist_candidate_to_depot             0.00320
+    1. distance_to_candidate               0.00615 ← TOP
+    2. candidate_demand_ratio              0.00389
+    3. urgency_score                       0.00284
+    4. dist_candidate_to_depot             0.00255
+    5. remaining_capacity_ratio            0.00249
   → Distance ranks #1
 
   SUMMARY:
@@ -32,9 +31,9 @@ Q1. CONSISTENCY: Does distance consistently rank as #1 feature?
   n=50: distance is #1  ✓ Hypothesis CONFIRMED
 
 
-=================================================================
+
 Q2. SENSITIVITY: Does the model change decision when features change?
-=================================================================
+
 
   Method: Take a real routing decision. The model chose customer A.
   Now artificially make customer A look WORSE (increase its distance).
@@ -53,29 +52,27 @@ Q2. SENSITIVITY: Does the model change decision when features change?
                         change the choice. SHAP explanations may be
                         incomplete (not wrong, just partial).
 
-=================================================================
+
 Q3. DEGRADATION: Does SHAP reliability decrease for larger problems?
-=================================================================
 
   Proxy metric: "Explanation consistency score"
   We compute the VARIANCE of SHAP values for the top feature across decisions.
   HIGH variance → the model uses distance inconsistently → harder to explain
   LOW variance  → distance is a stable, reliable predictor → easy to explain
 
-  n=10: mean SHAP(distance)=0.0073, std=0.1476, CV=20.344
-  n=20: mean SHAP(distance)=0.0274, std=0.1333, CV=4.868
-  n=50: mean SHAP(distance)=-0.0111, std=0.0914, CV=8.220
+  n=10: mean |SHAP|(distance) = 0.0241
+  n=20: mean |SHAP|(distance) = 0.0157
+  n=50: mean |SHAP|(distance) = 0.0062
 
-  (Higher CV = more variable = less reliable explanation)
-
+  Signal dropped 74% from n=10 to n=50
+  (Lower = distance matters less = explanations less actionable)
   Saved degradation plot → plots/degradation_by_size.png
 
   Generating feature scatter plots...
 
 
-=================================================================
+
 FINAL REPORT SUMMARY
-=================================================================
 
   This project applied SHAP explanations to a Reinforcement Learning
   model solving the Capacitated Vehicle Routing Problem (CVRP).
@@ -89,18 +86,18 @@ FINAL REPORT SUMMARY
   [n=10] Sensitivity test: 100.0% of decisions changed when distance perturbed
   [n=50] Sensitivity test: 99.0% of decisions changed when distance perturbed
 
-  Degradation of explanation reliability with problem size:
-    n=10: CV = 20.344
-    n=20: CV = 4.868
-    n=50: CV = 8.220
+  SHAP signal strength (mean |SHAP| for distance):
+    n=10: 0.0241
+    n=20: 0.0157
+    n=50: 0.0062
+  Signal dropped 74% from n=10 to n=50
 
   CONCLUSION:
   SHAP explanations provide meaningful transparency for small-to-medium
   CVRP instances. The dominant feature (distance) aligns with classical
-  routing heuristics, supporting the hypothesis. For larger instances,
-  explanation variance increases, suggesting diminishing interpretability
-  — consistent with the project's prediction.
+  routing heuristics, supporting the hypothesis. For larger instances, 
+  SHAP signal strength weakens by 74%, suggesting single-feature explanations 
+  become less actionable at scale.
 
   This supports the human-in-the-loop design goal: logistics managers
   can trust and intervene in AI routing decisions when SHAP explanations
-  are available, especially for smaller fleets / shorter routes.
