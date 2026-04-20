@@ -1,6 +1,6 @@
 """
 3_shap_explain.py
-─────────────────────────────────────────────────────────────────────────────
+
 STEP 3: Apply SHAP to explain the routing decisions logged in step 2.
 
 HOW SHAP WORKS (plain English):
@@ -30,7 +30,6 @@ WHAT THIS SCRIPT PRODUCES:
   data/shap_values_n20.csv
   data/shap_values_n50.csv
   plots/shap_bar_n*.png      ← bar charts of feature importance
-─────────────────────────────────────────────────────────────────────────────
 """
 
 import os
@@ -70,7 +69,7 @@ def train_surrogate(df: pd.DataFrame):
         (trained_model, X_train, X_test, y_test)
     """
     X = df[FEATURE_NAMES].values  # features matrix (n_rows × 5)
-    y = df["chosen"].values        # target: 1 = chosen, 0 = not chosen
+    y = df["chosen"].values       # target: 1 = chosen, 0 = not chosen
 
     # Split into train/test so we can report accuracy honestly
     X_train, X_test, y_train, y_test = train_test_split(
@@ -128,14 +127,12 @@ def compute_shap_values(clf, X_background: np.ndarray,
     #   Old SHAP: list of 2 arrays, each (n_samples, n_features)
     #   New SHAP: single array of shape (n_samples, n_features, n_classes)
     if isinstance(shap_vals, list):
-        return shap_vals[1]       # class 1 = "was chosen"
+        return explainer, shap_vals[1]       # class 1 = "was chosen"
     elif shap_vals.ndim == 3:
-        return shap_vals[:, :, 1] # new format — take class 1
-    return shap_vals              # already (n_samples, n_features)
+        return explainer, shap_vals[:, :, 1] # new format — take class 1
+    return explainer, shap_vals              # already (n_samples, n_features)
 
-# ═══════════════════════════════════════════════════════════════════════════
 # MAIN: Explain decisions for each problem size
-# ═══════════════════════════════════════════════════════════════════════════
 
 for n in PROBLEM_SIZES:
     print(f"\n══ SHAP analysis for n={n} ══")
@@ -144,10 +141,10 @@ for n in PROBLEM_SIZES:
     df = pd.read_csv(f"data/decisions_n{n}.csv")
     print(f"  Loaded {len(df)} rows ({df['chosen'].sum()} chosen decisions)")
 
-    # ── Train surrogate ────────────────────────────────────────────────────
+    # Train surrogate 
     clf, X_train, X_test, y_test = train_surrogate(df)
 
-    # ── Compute SHAP values ────────────────────────────────────────────────
+    # Compute SHAP values 
     # We explain a random subset of test rows (full set can be slow)
     np.random.seed(42)
     n_explain = min(500, len(X_test))
@@ -155,10 +152,10 @@ for n in PROBLEM_SIZES:
     X_explain = X_test[idx]
 
     print(f"  Computing SHAP values for {n_explain} samples...")
-    shap_vals = compute_shap_values(clf, X_train, X_explain)
+    explainer, shap_vals = compute_shap_values(clf, X_train, X_explain)
     # shap_vals shape: (n_explain, 5)  — 5 features
 
-    # ── Save SHAP values as a DataFrame ───────────────────────────────────
+    # Save SHAP values as a DataFrame 
     # One row per sample, columns = shap_<feature_name>
     shap_df = pd.DataFrame(X_explain, columns=FEATURE_NAMES)
     for fi, fname in enumerate(FEATURE_NAMES):
@@ -168,7 +165,7 @@ for n in PROBLEM_SIZES:
     shap_df.to_csv(save_path, index=False)
     print(f"  ✓ Saved SHAP values → {save_path}")
 
-    # ── Mean |SHAP| = overall feature importance ───────────────────────────
+    # Mean |SHAP| = overall feature importance
     # Taking the ABSOLUTE value because we care about MAGNITUDE of influence,
     # not direction. Then average across all explained samples.
     mean_abs_shap = np.mean(np.abs(shap_vals), axis=0)
@@ -180,7 +177,7 @@ for n in PROBLEM_SIZES:
     }).sort_values("mean_abs_shap", ascending=False)
     print(importance_df.to_string(index=False))
 
-    # ── Bar chart ──────────────────────────────────────────────────────────
+    # Bar chart
     plot_shap_bar(
         shap_values_mean=mean_abs_shap,
         feature_names=FEATURE_NAMES,
@@ -188,7 +185,7 @@ for n in PROBLEM_SIZES:
         save_path=f"plots/shap_bar_n{n}.png"
     )
 
-    # ── SHAP summary plot (built-in beeswarm) ─────────────────────────────
+    # SHAP summary plot (built-in beeswarm)
     # This is the classic SHAP visualization:
     #   - Each dot = one data point
     #   - Color = feature value (red=high, blue=low)
@@ -206,5 +203,38 @@ for n in PROBLEM_SIZES:
     plt.savefig(f"plots/shap_summary_n{n}.png", dpi=150, bbox_inches="tight")
     plt.close()
     print(f"  Saved SHAP summary plot → plots/shap_summary_n{n}.png")
+
+
+    # Waterfall plot — explains ONE specific decision in detail ──────────
+    # Shows exactly how each feature pushed THIS specific decision
+    # up or down from the baseline. Much more intuitive for a human
+    # operator than aggregate charts — it answers "why THIS choice?"
+    #
+    # Read it like this:
+    #   Base value     = what the model predicts on average (no info)
+    #   Each bar       = how much one feature changed that prediction
+    #   Red bar        = this feature INCREASED probability of being chosen
+    #   Blue bar       = this feature DECREASED probability of being chosen
+    #   Final value    = the model's actual prediction for this candidate
+    base_val = explainer.expected_value
+    if isinstance(base_val, (list, np.ndarray)):
+        base_val = float(np.array(base_val).flat[1])
+    else:
+        base_val = float(base_val)
+
+    shap.plots.waterfall(
+        shap.Explanation(
+            values        = shap_vals[0],    # SHAP values for 1st sample
+            base_values   = base_val,        # average model output
+            data          = X_explain[0],    # actual feature values
+            feature_names = FEATURE_NAMES
+        ),
+        show=False
+    )
+    plt.title(f"Single decision explanation — n={n} customers", fontsize=12)
+    plt.tight_layout()
+    plt.savefig(f"plots/shap_waterfall_n{n}.png", dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"  Saved waterfall plot → plots/shap_waterfall_n{n}.png")
 
 print("\n✓ SHAP analysis complete. Next step: run  python 4_evaluate.py")
