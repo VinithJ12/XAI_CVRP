@@ -1,6 +1,6 @@
 """
 1_generate_problem.py
-─────────────────────────────────────────────────────────────────────────────
+
 STEP 1: Generate CVRP problem instances of different sizes and save them.
 
 WHY THIS STEP EXISTS:
@@ -15,7 +15,12 @@ WHAT THIS SCRIPT PRODUCES:
   data/instances_n20.pkl   ← 50 medium problems
   data/instances_n50.pkl   ← 50 large problems
   plots/sample_route_n10.png  ← visual of one small instance
-─────────────────────────────────────────────────────────────────────────────
+  plots/sample_route_n20.png  ← visual of one medium instance
+  plots/sample_route_n50.png  ← visual of one large instance
+
+HOW TO RUN THIS SCRIPT:
+  python 1_generate_problem.py
+
 """
 
 import os
@@ -26,7 +31,7 @@ import numpy as np
 from utils.cvrp_env import CVRPInstance
 from utils.visualize import plot_route
 
-# ── Configuration ──────────────────────────────────────────────────────────
+# Configuration 
 # How many customers in each "size tier"
 PROBLEM_SIZES   = [10, 20, 50]
 
@@ -38,7 +43,7 @@ INSTANCES_PER_SIZE = 50
 os.makedirs("data",  exist_ok=True)
 os.makedirs("plots", exist_ok=True)
 
-# ── Main generation loop ───────────────────────────────────────────────────
+# Main generation loop
 for n in PROBLEM_SIZES:
     print(f"\n── Generating {INSTANCES_PER_SIZE} instances with n={n} customers ──")
 
@@ -56,14 +61,14 @@ for n in PROBLEM_SIZES:
             print(f"  Customer 1: coords={inst.coords[1].round(3)}, "
                   f"demand={inst.demands[1]:.3f}")
 
-    # ── Save all instances to a pickle file ────────────────────────────────
+    # Save all instances to a pickle file for later use in training and SHAP analysis.
     # pickle = Python's way of saving ANY object to disk
     save_path = f"data/instances_n{n}.pkl"
     with open(save_path, "wb") as f:
         pickle.dump(instances, f)
     print(f"  ✓ Saved {len(instances)} instances → {save_path}")
 
-    # ── Plot the first instance so we can visually inspect it ──────────────
+    # Plot the first instance so we can visually inspect it and verify the coordinates and demands look reasonable. 
     # We don't have a route yet, so we just show depot-to-all-customers
     # as a "star" pattern to verify the map looks reasonable.
     first_inst = instances[0]
@@ -77,4 +82,4 @@ for n in PROBLEM_SIZES:
     )
 
 print("\n✓ All instances generated. Check data/ and plots/ folders.")
-print("  Next step: run  python 2_run_rl_model.py")
+print("Next step: run  python 2_run_rl_model.py")
