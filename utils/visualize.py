@@ -1,6 +1,6 @@
 """
 utils/visualize.py
-─────────────────────────────────────────────────────────────────────────────
+
 Helper functions for plotting routes and SHAP results.
 Kept separate so the main scripts stay clean and readable.
 """
@@ -24,7 +24,7 @@ def plot_route(instance, route: list, title: str = "CVRP Route", save_path: str 
     fig, ax = plt.subplots(figsize=(7, 7))
     coords = instance.coords
 
-    # ── Draw the route as connected arrows ─────────────────────────────────
+    # Draw the route as connected arrows
     for i in range(len(route) - 1):
         start = coords[route[i]]
         end   = coords[route[i + 1]]
@@ -33,13 +33,13 @@ def plot_route(instance, route: list, title: str = "CVRP Route", save_path: str 
             arrowprops=dict(arrowstyle="->", color="steelblue", lw=1.5)
         )
 
-    # ── Plot depot (large red square) ─────────────────────────────────────
+    # Plot depot (large red square)
     depot = coords[0]
     ax.scatter(*depot, s=200, c="red", marker="s", zorder=5, label="Depot")
     ax.annotate("Depot", depot, textcoords="offset points",
                 xytext=(6, 6), fontsize=9, color="red")
 
-    # ── Plot customers (circles, size proportional to demand) ─────────────
+    # Plot customers (circles, size proportional to demand) 
     for i in range(1, instance.n_customers + 1):
         c = coords[i]
         demand = instance.demands[i]
