@@ -1,6 +1,6 @@
 """
 utils/cvrp_env.py
-─────────────────────────────────────────────────────────────────────────────
+
 CVRP Environment: defines what a routing problem looks like and how to
 extract human-understandable FEATURES from the model's perspective at
 each decision step.
@@ -45,12 +45,12 @@ class CVRPInstance:
         self.n_customers = n_customers
         self.capacity = 1.0  # normalized — demands will be fractions of this
 
-        # ── Coordinates ────────────────────────────────────────────────────
+        # Coordinates 
         # Row 0 = depot (the warehouse trucks start from)
         # Rows 1..n = customers, randomly scattered in [0,1]² space
         self.coords = rng.uniform(0, 1, size=(n_customers + 1, 2))
 
-        # ── Demands ────────────────────────────────────────────────────────
+        # Demands 
         # Each customer needs between 10% and 40% of truck capacity.
         # Depot has demand 0 (we never need to "deliver" to the warehouse).
         customer_demands = rng.uniform(0.1, 0.4, size=n_customers)
@@ -128,31 +128,31 @@ def extract_features(state: CVRPState, candidate_idx: int) -> dict:
     """
     inst = state.instance
 
-    # ── Feature 1: Distance to candidate ──────────────────────────────────
+    # Feature 1: Distance to candidate 
     # How far is the truck from this candidate customer?
     # Normalized by the max possible distance (diagonal of unit square ≈ 1.414)
     dist_to_candidate = inst.euclidean_distance(
         state.current_location, candidate_idx
     ) / np.sqrt(2)
 
-    # ── Feature 2: Remaining capacity ratio ───────────────────────────────
+    # Feature 2: Remaining capacity ratio 
     # How much room does the truck have left?
     # 1.0 = completely empty (lots of room), 0.0 = completely full
     remaining_capacity_ratio = state.remaining_capacity / inst.capacity
 
-    # ── Feature 3: Candidate demand ratio ─────────────────────────────────
+    # Feature 3: Candidate demand ratio 
     # How big is this customer's order relative to truck capacity?
     # High value = this customer will fill up a lot of the truck
     candidate_demand_ratio = inst.demands[candidate_idx] / inst.capacity
 
-    # ── Feature 4: Distance from candidate back to depot ──────────────────
+    # Feature 4: Distance from candidate back to depot
     # After visiting this customer, how far would we be from home?
     # Useful for end-of-route planning (don't strand yourself far away)
     dist_candidate_to_depot = inst.euclidean_distance(
         candidate_idx, 0  # index 0 = depot
     ) / np.sqrt(2)
 
-    # ── Feature 5: Urgency score ───────────────────────────────────────────
+    # Feature 5: Urgency score
     # Are we running so low on capacity that we MUST return to depot soon?
     # High value = we're nearly full and urgently need to refill
     # Formula: how many more "average" customers can we fit?
@@ -173,7 +173,7 @@ def extract_features(state: CVRPState, candidate_idx: int) -> dict:
     }
 
 
-# ── List of feature names (used throughout for consistent ordering) ─────────
+# List of feature names (used throughout for consistent ordering)
 FEATURE_NAMES = [
     "distance_to_candidate",
     "remaining_capacity_ratio",
