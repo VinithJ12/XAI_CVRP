@@ -1,13 +1,11 @@
 """
 utils/rl_model.py
-─────────────────────────────────────────────────────────────────────────────
 The routing model classes. Importable from any script.
 
 Contains:
   KoolSurrogate  — greedy heuristic that mimics the Kool RL model's behavior.
                    Use this by default.
   (See commented block at bottom for how to swap in the real Kool model)
-─────────────────────────────────────────────────────────────────────────────
 """
 
 import numpy as np
