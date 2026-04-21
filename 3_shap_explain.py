@@ -135,7 +135,7 @@ def compute_shap_values(clf, X_background: np.ndarray,
 # MAIN: Explain decisions for each problem size
 
 for n in PROBLEM_SIZES:
-    print(f"\n══ SHAP analysis for n={n} ══")
+    print(f"\n SHAP analysis for n={n}")
 
     # Load decision log
     df = pd.read_csv(f"data/decisions_n{n}.csv")
@@ -205,7 +205,7 @@ for n in PROBLEM_SIZES:
     print(f"  Saved SHAP summary plot → plots/shap_summary_n{n}.png")
 
 
-    # Waterfall plot — explains ONE specific decision in detail ──────────
+    # Waterfall plot — explains ONE specific decision in detail 
     # Shows exactly how each feature pushed THIS specific decision
     # up or down from the baseline. Much more intuitive for a human
     # operator than aggregate charts — it answers "why THIS choice?"
