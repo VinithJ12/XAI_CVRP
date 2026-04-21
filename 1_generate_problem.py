@@ -45,7 +45,7 @@ os.makedirs("plots", exist_ok=True)
 
 # Main generation loop
 for n in PROBLEM_SIZES:
-    print(f"\n── Generating {INSTANCES_PER_SIZE} instances with n={n} customers ──")
+    print(f"\n Generating {INSTANCES_PER_SIZE} instances with n={n} customers")
 
     instances = []
     for i in range(INSTANCES_PER_SIZE):
