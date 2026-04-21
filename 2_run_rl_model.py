@@ -83,7 +83,7 @@ def run_model_on_instance(model, instance: CVRPInstance) -> list[dict]:
     return records
 
 
-# ── Initialize the upgraded surrogate model ────────────────────────────────
+# Initialize the upgraded surrogate model 
 # noise_scale=0.02 : small per-decision noise (realistic uncertainty)
 # temperature=1.0  : softmax sampling — not purely greedy
 # seed=42          : reproducible fixed weights every run
